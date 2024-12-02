@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 from sentence_transformers import SentenceTransformer
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import chromadb
 
 # Function to read webpage content from a URL
