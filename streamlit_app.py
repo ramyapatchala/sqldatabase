@@ -80,7 +80,7 @@ professor_name_search = st.text_input("Search by Professor's Name:")
 
 if professor_name_search:
     # Pagination setup for professors
-    professor_page_num = st.number_input('Select page number for professors', min_value=1, step=1)
+    professor_page_num = 1
     items_per_page = 10
 
     # Fetch professors matching the name search
