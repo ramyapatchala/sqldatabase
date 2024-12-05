@@ -127,8 +127,13 @@ if department_name_search:
     if professors:
         for professor in professors:
             professor_name = professor[1]  # full_name is in column index 1
-            email = professor[2] if professor[2] else "No email"  # email is in column index 2
-            st.write(f"**Name**: {professor_name}, **Email**: {email}")
+            email = professor[2]  # email is in column index 2
+        
+            # Display the professor name and email only if it's not null
+            if email:
+                st.write(f"**Name**: {professor_name}, **Email**: {email}")
+            else:
+                st.write(f"**Name**: {professor_name}")
     else:
         st.write("No professors found in that department!")
 
