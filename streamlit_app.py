@@ -88,7 +88,15 @@ if professor_name:
         # Display Professor's Published Works
         query_works = "SELECT * FROM works WHERE orcid_id = ? ORDER BY work_title ASC"
         works_data = fetch_data(query_works, params=(professor["orcid_id"],))
+
         if not works_data.empty:
+            # Lowercase titles and prioritize rows with non-null work_url
+            works_data["work_title"] = works_data["work_title"].str.lower()
+            works_data = (
+                works_data.sort_values(by=["work_title", "work_url"], ascending=[True, False])
+                .drop_duplicates(subset="work_title", keep="first")
+            )
+
             st.markdown("### 📚 Published Works")
 
             # Pagination for published works
