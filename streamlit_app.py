@@ -27,25 +27,25 @@ if professor_name:
     researchers_data = fetch_data(query_researchers, params=(f"%{professor_name}%",))
 
     if not researchers_data.empty:
-        # Display the professor's details
+        # Display the professor's details within an expander
         professor = researchers_data.iloc[0]
-        st.subheader(f"Professor: {professor['full_name']}")
-        st.markdown(f"📧 **Email:** {professor['email']}")
+        with st.expander(f"👩‍🏫 Professor: {professor['full_name']}", expanded=True):
+            st.markdown(f"📧 **Email:** {professor['email']}")
 
-        # Display Professor's Employment Information
-        query_employment = "SELECT * FROM employment WHERE orcid_id = ?"
-        employment_data = fetch_data(query_employment, params=(professor["orcid_id"],))
-        if not employment_data.empty:
-            st.markdown("### 🏢 Employment Information")
-            for _, row in employment_data.iterrows():
-                st.write(f"**Organization:** {row['employment']}")
-                st.write(f"**Department:** {row['department']}")
-                st.write(f"**Role:** {row['role']}")
-                st.write(f"**Start Year:** {row['start_year']}")
-                st.write(f"**End Year:** {row['end_year']}")
-                st.write("---")
-        else:
-            st.write("No employment information available.")
+            # Display Professor's Employment Information
+            query_employment = "SELECT * FROM employment WHERE orcid_id = ?"
+            employment_data = fetch_data(query_employment, params=(professor["orcid_id"],))
+            if not employment_data.empty:
+                st.markdown("### 🏢 Employment Information")
+                for _, row in employment_data.iterrows():
+                    st.write(f"**Organization:** {row['employment']}")
+                    st.write(f"**Department:** {row['department']}")
+                    st.write(f"**Role:** {row['role']}")
+                    st.write(f"**Start Year:** {row['start_year']}")
+                    st.write(f"**End Year:** {row['end_year']}")
+                    st.write("---")
+            else:
+                st.write("No employment information available.")
 
         # Display Professor's Published Works
         query_works = "SELECT * FROM works WHERE orcid_id = ? ORDER BY work_title ASC"
@@ -66,16 +66,16 @@ if professor_name:
             paginated_data = works_data.iloc[start_idx:end_idx]
 
             for _, row in paginated_data.iterrows():
-                st.write(f"**Title:** {row['work_title']}")
-                st.write(
-                    f"**DOI:** [{row['DOI_URL']}]({row['DOI_URL']})" if row["DOI_URL"] != "N/A" else "No DOI available"
-                )
-                st.write(
-                    f"**Work URL:** [{row['work_url']}]({row['work_url']})"
-                    if row["work_url"] != "N/A"
-                    else "No URL available"
-                )
-                st.write("---")
+                with st.expander(f"📄 {row['work_title']}", expanded=False):
+                    st.write(
+                        f"**DOI:** [{row['DOI_URL']}]({row['DOI_URL']})" if row["DOI_URL"] != "N/A" else "No DOI available"
+                    )
+                    st.write(
+                        f"**Work URL:** [{row['work_url']}]({row['work_url']})"
+                        if row["work_url"] != "N/A"
+                        else "No URL available"
+                    )
+                    st.write("---")
 
             st.markdown(f"**Page {page} of {total_pages}**")
         else:
