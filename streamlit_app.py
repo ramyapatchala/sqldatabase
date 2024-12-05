@@ -28,7 +28,6 @@ def fetch_publications_by_professor(professor_orcid_id, page_num, items_per_page
         SELECT * 
         FROM works
         WHERE orcid_id = ? 
-        ORDER BY work_title ASC
         LIMIT ? OFFSET ?
     """
     offset = (page_num - 1) * items_per_page
