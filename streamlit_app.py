@@ -22,17 +22,41 @@ def fetch_professors_by_name(professor_name_search, page_num, items_per_page):
     return cursor.fetchall()
 
 # Function to fetch publications for a specific professor, sorted alphabetically
+# Function to fetch publications for a specific professor, with title case handling and removal of duplicates
 def fetch_publications_by_professor(professor_orcid_id, page_num, items_per_page):
     query = f"""
         SELECT * 
         FROM works
         WHERE orcid_id = ? 
-        ORDER BY work_title ASC  -- Sort by work_title alphabetically
         LIMIT ? OFFSET ?
     """
     offset = (page_num - 1) * items_per_page
     cursor.execute(query, (professor_orcid_id, items_per_page, offset))
-    return cursor.fetchall()
+    publications = cursor.fetchall()
+    
+    # Convert titles to lowercase and process duplicates based on non-null work_url
+    processed_publications = {}
+    
+    for pub in publications:
+        work_title = pub[2].lower()  # work_title is in column index 2
+        
+        # Check if the title already exists
+        if work_title not in processed_publications:
+            processed_publications[work_title] = pub
+        else:
+            # If the title exists, compare the URLs and keep the one with a non-null work_url
+            existing_pub = processed_publications[work_title]
+            if pub[3] is not None:  # If current publication has a non-null work_url
+                processed_publications[work_title] = pub  # Replace the old one
+    
+    # Convert the processed publications back to a list of values
+    sorted_publications = list(processed_publications.values())
+    
+    # Sort publications alphabetically by title
+    sorted_publications.sort(key=lambda x: x[2].lower())  # Assuming work_title is in index 2
+    
+    return sorted_publications
+
 
 
 # Function to fetch professors by department
