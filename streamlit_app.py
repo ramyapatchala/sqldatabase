@@ -33,7 +33,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.title("🔍 Syracuse University Researchers")
-st.markdown("Search for professors, view their employment details, and explore their published works.")
+st.markdown("Search for professors by name or department, view their employment details, and explore their published works.")
+
+# Search by professor name
+professor_name_search = st.text_input("Enter professor name to search for:", "")
+
+# Fetch professors based on name search
+if professor_name_search:
+    query_professors = """
+        SELECT DISTINCT employment.*, researchers.full_name, researchers.email
+        FROM employment
+        INNER JOIN researchers ON employment.orcid_id = researchers.orcid_id
+        WHERE researchers.full_name LIKE ?
+    """
+    professor_data = fetch_data(query_professors, params=(f"%{professor_name_search}%",))
+    
+    if not professor_data.empty:
+        st.markdown("### Found Professors:")
+        for _, row in professor_data.iterrows():
+            st.markdown(f"👩‍🏫 **Professor:** {row['full_name']}  \n📧 **Email:** {row['email']}")
+    else:
+        st.warning("No professors found with that name.")
 
 # Input box to search by department
 department_name = st.text_input("Enter the department name to search:", "")
