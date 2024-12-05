@@ -23,9 +23,6 @@ st.markdown(
     .st-expander {
         font-size: 18px !important;
     }
-    .stMarkdown {
-        font-size: 18px !important;
-    }
     .professor-name {
         font-size: 28px !important;
         font-weight: bold !important;
@@ -99,12 +96,22 @@ if professor_name:
             total_items = len(works_data)
             total_pages = (total_items - 1) // items_per_page + 1
 
-            # Display publications
-            page = st.session_state.get("page", 1)
-            start_idx = (page - 1) * items_per_page
+            # Initialize the page number in session state
+            if "page" not in st.session_state:
+                st.session_state.page = 1
+
+            # Allow user to change page number
+            page = st.number_input(
+                "Page", min_value=1, max_value=total_pages, step=1, value=st.session_state.page
+            )
+            st.session_state.page = page  # Update session state with the current page number
+
+            # Calculate indices for pagination
+            start_idx = (st.session_state.page - 1) * items_per_page
             end_idx = start_idx + items_per_page
             paginated_data = works_data.iloc[start_idx:end_idx]
 
+            # Display paginated publications
             for _, row in paginated_data.iterrows():
                 with st.expander(f"📄 {row['work_title']}", expanded=False):
                     st.markdown(
@@ -114,12 +121,9 @@ if professor_name:
                         f"**Work URL:** [{row['work_url']}]({row['work_url']})" if row["work_url"] != "N/A" else "**Work URL:** No URL available"
                     )
 
-            # Move Pagination Control to Bottom
+            # Display pagination info at the bottom
             st.markdown("---")
-            page = st.number_input(
-                "Page", min_value=1, max_value=total_pages, step=1, value=page, key="pagination"
-            )
-            st.markdown(f"**Page {page} of {total_pages}**")
+            st.markdown(f"**Page {st.session_state.page} of {total_pages}**")
         else:
             st.write("No publications available.")
     else:
