@@ -100,9 +100,7 @@ if professor_name:
             total_pages = (total_items - 1) // items_per_page + 1
 
             # Display publications
-            page = st.number_input(
-                "Page", min_value=1, max_value=total_pages, step=1, value=1, key="pagination"
-            )
+            page = st.session_state.get("page", 1)
             start_idx = (page - 1) * items_per_page
             end_idx = start_idx + items_per_page
             paginated_data = works_data.iloc[start_idx:end_idx]
@@ -116,6 +114,11 @@ if professor_name:
                         f"**Work URL:** [{row['work_url']}]({row['work_url']})" if row["work_url"] != "N/A" else "**Work URL:** No URL available"
                     )
 
+            # Move Pagination Control to Bottom
+            st.markdown("---")
+            page = st.number_input(
+                "Page", min_value=1, max_value=total_pages, step=1, value=page, key="pagination"
+            )
             st.markdown(f"**Page {page} of {total_pages}**")
         else:
             st.write("No publications available.")
