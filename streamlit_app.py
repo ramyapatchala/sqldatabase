@@ -25,8 +25,12 @@ st.title("University Researcher and Publications Search")
 professor_name_search = st.text_input("Search by Professor's Name:")
 
 if professor_name_search:
+    # Handle null values in the 'full_name' column by filling NaN with empty strings
+    all_professors_data['full_name'] = all_professors_data['full_name'].fillna('')
+
     # Filter professors by name (case insensitive)
     filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(professor_name_search, case=False)]
+    
     if not filtered_professors.empty:
         st.write(f"Found {len(filtered_professors)} professors matching '{professor_name_search}'")
 
@@ -62,8 +66,12 @@ if professor_name_search:
 department_name_search = st.text_input("Search by Department Name:")
 
 if department_name_search:
-    # Filter professors by department
+    # Handle null values in the 'full_name' column by filling NaN with empty strings
+    all_professors_data['full_name'] = all_professors_data['full_name'].fillna('')
+
+    # Filter professors by department name (case insensitive)
     filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(department_name_search, case=False)]
+    
     if not filtered_professors.empty:
         st.write(f"Found {len(filtered_professors)} professors in '{department_name_search}' department")
 
