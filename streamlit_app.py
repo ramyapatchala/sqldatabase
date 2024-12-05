@@ -18,59 +18,77 @@ def fetch_data(query, params=None):
         st.error(f"Error fetching data: {e}")
         return pd.DataFrame()  # Return empty DataFrame on error
 
-# Fetching all professors data from the database
-all_professors_query = """
-    SELECT DISTINCT full_name
-    FROM researchers
-"""
-all_professors_data = fetch_data(all_professors_query)
 
-# Display the professors data with pagination
-if not all_professors_data.empty:
-    professors_per_page = 10
-    total_pages = len(all_professors_data) // professors_per_page + (1 if len(all_professors_data) % professors_per_page != 0 else 0)
-    
-    page = st.slider('Select page', 1, total_pages, 1)  # Streamlit slider to select page number
-    start_idx = (page - 1) * professors_per_page
-    end_idx = start_idx + professors_per_page
-    
-    # Display professors for the current page
-    professors_on_page = all_professors_data.iloc[start_idx:end_idx]
-    st.write("Professors:", professors_on_page)
-else:
-    st.warning("No professors found in the database.")
+# -------------------- 1. Professor's Publications Search ----------------------
 
-# Search functionality for professors
+# Input box to search for professor by name
 professor_name_search = st.text_input("Search for a professor by name:")
 
-# If the user enters a name to search
 if professor_name_search:
-    filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(professor_name_search, case=False)]
+    # Fetching publications based on the professor's name
+    professor_publications_query = """
+        SELECT title, work_url, doi_url, professor_name
+        FROM publications
+        WHERE professor_name = ?
+    """
+    professor_publications = fetch_data(professor_publications_query, params=(professor_name_search,))
     
-    if not filtered_professors.empty:
-        # Display the filtered professor(s)
-        st.write("Matching professors:", filtered_professors)
+    if not professor_publications.empty:
+        # Lowercasing the titles for case-insensitive comparison
+        professor_publications['title'] = professor_publications['title'].str.lower()
         
-        # Fetching publications based on the professor's name
-        professor_publications_query = """
-            SELECT title, work_url
-            FROM publications
-            WHERE professor_name = ?
-        """
-        professor_publications = fetch_data(professor_publications_query, params=(professor_name_search,))
+        # Pagination for publications (10 per page)
+        publications_per_page = 10
+        total_pages = len(professor_publications) // publications_per_page + (1 if len(professor_publications) % publications_per_page != 0 else 0)
         
-        if not professor_publications.empty:
-            # Lowercasing the titles for case-insensitive comparison
-            professor_publications['title'] = professor_publications['title'].str.lower()
-            
-            # Sort by title and filter rows where work_url is not null
-            professor_publications = professor_publications.sort_values(by='title')
-            professor_publications_with_url = professor_publications[professor_publications['work_url'].notnull()]
-            
-            # Display publications of the professor
-            for _, row in professor_publications_with_url.iterrows():
-                st.write(f"📄 {row['title']} [Link]({row['work_url']})")
-        else:
-            st.write("No publications found for the professor.")
+        page = st.slider('Select page for publications', 1, total_pages, 1)  # Streamlit slider for pagination
+        start_idx = (page - 1) * publications_per_page
+        end_idx = start_idx + publications_per_page
+        
+        # Display publications for the current page
+        publications_on_page = professor_publications.iloc[start_idx:end_idx]
+        st.write(f"### Publications by {professor_name_search}:")
+        
+        for _, row in publications_on_page.iterrows():
+            with st.expander(f"📄 {row['title']}"):
+                st.write(f"**Work URL**: [Link]({row['work_url']})")
+                st.write(f"**DOI URL**: [Link]({row['doi_url']})")
+                st.write(f"**Professor Name**: {row['professor_name']}")
     else:
-        st.write("No matching professors found.")
+        st.write("No publications found for the professor.")
+
+# -------------------- 2. Professor's List by Department ----------------------
+
+# Input box to search for professors by department
+department_search = st.text_input("Search for professors by department:")
+
+if department_search:
+    # Fetching professors based on the department name
+    department_professors_query = """
+        SELECT full_name, email, department
+        FROM researchers
+        WHERE department = ?
+    """
+    department_professors = fetch_data(department_professors_query, params=(department_search,))
+    
+    if not department_professors.empty:
+        # Pagination for professors (10 per page)
+        professors_per_page = 10
+        total_pages = len(department_professors) // professors_per_page + (1 if len(department_professors) % professors_per_page != 0 else 0)
+        
+        page = st.slider('Select page for professors', 1, total_pages, 1)  # Streamlit slider for pagination
+        start_idx = (page - 1) * professors_per_page
+        end_idx = start_idx + professors_per_page
+        
+        # Display professors for the current page
+        professors_on_page = department_professors.iloc[start_idx:end_idx]
+        st.write(f"### Professors in {department_search} Department:")
+        
+        for _, row in professors_on_page.iterrows():
+            if pd.notnull(row['email']):
+                st.write(f"**Professor**: {row['full_name']} | **Email**: {row['email']}")
+            else:
+                st.write(f"**Professor**: {row['full_name']} | **Email**: Not available")
+    else:
+        st.write(f"No professors found in the {department_search} department.")
+
