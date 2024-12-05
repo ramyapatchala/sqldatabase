@@ -6,59 +6,78 @@ import streamlit as st
 conn = sqlite3.connect("researchers.db")
 cursor = conn.cursor()
 
-# Fetch data from tables
-def fetch_data(query):
-    return pd.read_sql(query, conn)
-
-# Fetch all professors
-all_professors_query = "SELECT * FROM researchers"
-all_professors_data = fetch_data(all_professors_query)
-
-# Fetch all works (publications)
-all_works_query = "SELECT * FROM works"
-all_works_data = fetch_data(all_works_query)
-
-# Streamlit interface for Professor Search
+# Streamlit interface for Professor and Department Search
 st.title("University Researcher and Publications Search")
+
+# Function to fetch filtered professors by name from the database
+def fetch_professors_by_name(professor_name_search, page_num, items_per_page):
+    query = f"""
+        SELECT * 
+        FROM researchers
+        WHERE full_name LIKE ? 
+        LIMIT ? OFFSET ?
+    """
+    offset = (page_num - 1) * items_per_page
+    cursor.execute(query, ('%' + professor_name_search + '%', items_per_page, offset))
+    return cursor.fetchall()
+
+# Function to fetch publications for a specific professor
+def fetch_publications_by_professor(professor_orcid_id, page_num, items_per_page):
+    query = f"""
+        SELECT * 
+        FROM works
+        WHERE orcid_id = ? 
+        LIMIT ? OFFSET ?
+    """
+    offset = (page_num - 1) * items_per_page
+    cursor.execute(query, (professor_orcid_id, items_per_page, offset))
+    return cursor.fetchall()
+
+# Function to fetch professors by department
+def fetch_professors_by_department(department_name_search, page_num, items_per_page):
+    query = f"""
+        SELECT * 
+        FROM researchers
+        WHERE orcid_id IN (
+            SELECT orcid_id 
+            FROM employment 
+            WHERE department LIKE ?
+        )
+        LIMIT ? OFFSET ?
+    """
+    offset = (page_num - 1) * items_per_page
+    cursor.execute(query, ('%' + department_name_search + '%', items_per_page, offset))
+    return cursor.fetchall()
 
 # Professor Search
 professor_name_search = st.text_input("Search by Professor's Name:")
 
 if professor_name_search:
-    # Handle null values in the 'full_name' column by filling NaN with empty strings
-    all_professors_data['full_name'] = all_professors_data['full_name'].fillna('')
+    # Pagination setup for publications
+    page_num = st.number_input('Select page number for publications', min_value=1, step=1)
+    items_per_page = 10
 
-    # Filter professors by name (case insensitive)
-    filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(professor_name_search, case=False)]
+    # Fetch professors matching the name search
+    professors = fetch_professors_by_name(professor_name_search, page_num, items_per_page)
     
-    if not filtered_professors.empty:
-        st.write(f"Found {len(filtered_professors)} professors matching '{professor_name_search}'")
-
-        # Pagination for publications
-        page_num = st.number_input('Select page number for publications', min_value=1, step=1)
-        items_per_page = 10
-        start_idx = (page_num - 1) * items_per_page
-        end_idx = start_idx + items_per_page
-
-        # Display filtered works for professor
-        for _, row in filtered_professors.iterrows():
-            professor_name = row['full_name']
+    if professors:
+        for professor in professors:
+            professor_name = professor[1]  # full_name is in column index 1
+            professor_orcid_id = professor[0]  # orcid_id is in column index 0
             st.subheader(professor_name)
 
             # Fetch publications for this professor
-            professor_works = all_works_data[all_works_data['orcid_id'] == row['orcid_id']]
-            professor_works = professor_works.iloc[start_idx:end_idx]  # Paginate
-
-            for _, work_row in professor_works.iterrows():
-                work_title = work_row['work_title'].lower()  # Lowercase titles
-                work_url = work_row['work_url'] if pd.notnull(work_row['work_url']) else "No URL"
-                doi_url = work_row['DOI_URL'] if pd.notnull(work_row['DOI_URL']) else "No DOI"
+            publications = fetch_publications_by_professor(professor_orcid_id, page_num, items_per_page)
+            
+            for pub in publications:
+                work_title = pub[2].lower()  # work_title is in column index 2
+                work_url = pub[3] if pub[3] else "No URL"  # work_url is in column index 3
+                doi_url = pub[4] if pub[4] else "No DOI"  # DOI_URL is in column index 4
 
                 # Display work with expander
                 with st.expander(f"📄 {work_title.capitalize()}"):
                     st.markdown(f"**Work URL**: {work_url}")
                     st.markdown(f"**DOI URL**: {doi_url}")
-
     else:
         st.write("No professors found with that name!")
 
@@ -66,25 +85,17 @@ if professor_name_search:
 department_name_search = st.text_input("Search by Department Name:")
 
 if department_name_search:
-    # Handle null values in the 'full_name' column by filling NaN with empty strings
-    all_professors_data['full_name'] = all_professors_data['full_name'].fillna('')
+    # Pagination setup for professors
+    page_num = st.number_input('Select page number for professors', min_value=1, step=1)
+    items_per_page = 10
 
-    # Filter professors by department name (case insensitive)
-    filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(department_name_search, case=False)]
+    # Fetch professors by department
+    professors = fetch_professors_by_department(department_name_search, page_num, items_per_page)
     
-    if not filtered_professors.empty:
-        st.write(f"Found {len(filtered_professors)} professors in '{department_name_search}' department")
-
-        # Pagination for professors
-        page_num = st.number_input('Select page number for professors', min_value=1, step=1)
-        items_per_page = 10
-        start_idx = (page_num - 1) * items_per_page
-        end_idx = start_idx + items_per_page
-
-        # Display professors with email (if not null)
-        for _, row in filtered_professors.iloc[start_idx:end_idx].iterrows():
-            professor_name = row['full_name']
-            email = row['email'] if pd.notnull(row['email']) else "No email"
+    if professors:
+        for professor in professors:
+            professor_name = professor[1]  # full_name is in column index 1
+            email = professor[2] if professor[2] else "No email"  # email is in column index 2
             st.write(f"**Name**: {professor_name}, **Email**: {email}")
     else:
         st.write("No professors found in that department!")
