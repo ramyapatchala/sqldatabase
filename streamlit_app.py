@@ -35,25 +35,43 @@ st.markdown(
 st.title("🔍 Syracuse University Researchers")
 st.markdown("Search for professors by name or department, view their employment details, and explore their published works.")
 
-# Search by professor name
-professor_name_search = st.text_input("Enter professor name to search for:", "")
+# Fetch all professor names for auto-complete
+all_professors_query = """
+    SELECT DISTINCT full_name
+    FROM researchers
+"""
+all_professors_data = fetch_data(all_professors_query)
 
-# Fetch professors based on name search
+# Search for professor by name with auto-complete feature
+professor_name_search = st.text_input("Enter professor name to search for:", "", help="Start typing to search for a professor's name")
+
 if professor_name_search:
-    query_professors = """
-        SELECT DISTINCT employment.*, researchers.full_name, researchers.email
-        FROM employment
-        INNER JOIN researchers ON employment.orcid_id = researchers.orcid_id
-        WHERE researchers.full_name LIKE ?
+    filtered_professors = all_professors_data[all_professors_data['full_name'].str.contains(professor_name_search, case=False)]
+    professor_names = filtered_professors['full_name'].tolist()
+    selected_professor_name = st.selectbox("Select Professor", options=professor_names, key="professor_select_box")
+
+    # Fetch publications and other details for the selected professor
+    query_publications = """
+        SELECT researchers.full_name, publications.*
+        FROM publications
+        INNER JOIN researchers ON publications.orcid_id = researchers.orcid_id
+        WHERE researchers.full_name = ?
+        ORDER BY publications.publication_year DESC
     """
-    professor_data = fetch_data(query_professors, params=(f"%{professor_name_search}%",))
-    
-    if not professor_data.empty:
-        st.markdown("### Found Professors:")
-        for _, row in professor_data.iterrows():
-            st.markdown(f"👩‍🏫 **Professor:** {row['full_name']}  \n📧 **Email:** {row['email']}")
+    publications_data = fetch_data(query_publications, params=(selected_professor_name,))
+
+    if not publications_data.empty:
+        st.markdown(f"### **Publications by Professor {selected_professor_name}:**")
+        for _, row in publications_data.iterrows():
+            # Expander for each publication with title, year, and publication URL
+            with st.expander(f"📄 {row['publication_title'].lower()}", expanded=True):
+                st.markdown(f"**Year:** {row['publication_year']}")
+                if pd.notna(row['work_url']):
+                    st.markdown(f"[Read more]({row['work_url']})")
     else:
-        st.warning("No professors found with that name.")
+        st.warning("No publications found for the selected professor.")
+else:
+    st.info("Start typing a professor's name to search for their publications.")
 
 # Input box to search by department
 department_name = st.text_input("Enter the department name to search:", "")
