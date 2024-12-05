@@ -67,7 +67,7 @@ if professor_name_search:
             st.subheader(professor_name)
 
             # Pagination setup for publications
-            publication_page_num = st.number_input(f'Select page number for publications of {professor_name}', min_value=1, step=1)
+            publication_page_num = st.number_input(f'Select page number for publications of {professor_name}', min_value=1, step=1, key=f"pub_{professor_orcid_id}")
             
             # Fetch publications for this professor
             publications = fetch_publications_by_professor(professor_orcid_id, publication_page_num, items_per_page)
@@ -91,8 +91,8 @@ if professor_name_search:
 department_name_search = st.text_input("Search by Department Name:")
 
 if department_name_search:
-    # Pagination setup for professors
-    department_page_num = st.number_input('Select page number for professors', min_value=1, step=1)
+    # Pagination setup for professors in a department
+    department_page_num = st.number_input('Select page number for professors', min_value=1, step=1, key=f"department_{department_name_search}")
     items_per_page = 10
 
     # Fetch professors by department
