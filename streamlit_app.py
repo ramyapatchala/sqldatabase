@@ -78,12 +78,12 @@ elif search_option == "Professor's Name" and search_input:
             works_data = fetch_data(query_works, params=(professor["orcid_id"],))
             if not works_data.empty:
                 st.markdown("### 📚 Published Works")
-
+            
                 # Pagination for published works
-                items_per_page = 5
+                items_per_page = 10
                 total_items = len(works_data)
                 total_pages = (total_items - 1) // items_per_page + 1
-
+            
                 # Display publications
                 page = st.number_input(
                     "Page", min_value=1, max_value=total_pages, step=1, value=1, key="pagination"
@@ -91,24 +91,24 @@ elif search_option == "Professor's Name" and search_input:
                 start_idx = (page - 1) * items_per_page
                 end_idx = start_idx + items_per_page
                 paginated_data = works_data.iloc[start_idx:end_idx]
-
+            
                 for _, row in paginated_data.iterrows():
-                    with st.expander(f"📄 {row['work_title']}", expanded=False):
-                        st.write(
-                            f"**DOI:** [{row['DOI_URL']}]({row['DOI_URL']})"
-                            if row["DOI_URL"] != "N/A"
-                            else "No DOI available"
-                        )
-                        st.write(
-                            f"**Work URL:** [{row['work_url']}]({row['work_url']})"
-                            if row["work_url"] != "N/A"
-                            else "No URL available"
-                        )
-                        st.write("---")
-
+                    st.markdown(f"**📄 {row['work_title']}**")
+                    if row["DOI_URL"] and row["DOI_URL"] != "N/A":
+                        st.markdown(f"**DOI:** [{row['DOI_URL']}]({row['DOI_URL']})")
+                    else:
+                        st.markdown("**DOI:** No DOI available")
+            
+                    if row["work_url"] and row["work_url"] != "N/A":
+                        st.markdown(f"**Work URL:** [{row['work_url']}]({row['work_url']})")
+                    else:
+                        st.markdown("**Work URL:** No URL available")
+                    st.markdown("---")  # Divider for clarity
+            
                 st.markdown(f"**Page {page} of {total_pages}**")
             else:
                 st.write("No publications available.")
+
     else:
         st.warning("Professor not found. Please try a different name.")
 else:
