@@ -21,17 +21,19 @@ def fetch_professors_by_name(professor_name_search, page_num, items_per_page):
     cursor.execute(query, ('%' + professor_name_search + '%', items_per_page, offset))
     return cursor.fetchall()
 
-# Function to fetch publications for a specific professor
+# Function to fetch publications for a specific professor, sorted alphabetically
 def fetch_publications_by_professor(professor_orcid_id, page_num, items_per_page):
     query = f"""
         SELECT * 
         FROM works
         WHERE orcid_id = ? 
+        ORDER BY work_title ASC  -- Sort by work_title alphabetically
         LIMIT ? OFFSET ?
     """
     offset = (page_num - 1) * items_per_page
     cursor.execute(query, (professor_orcid_id, items_per_page, offset))
     return cursor.fetchall()
+
 
 # Function to fetch professors by department
 def fetch_professors_by_department(department_name_search, page_num, items_per_page):
