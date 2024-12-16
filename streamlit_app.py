@@ -94,20 +94,23 @@ if professor_name_search:
                         st.markdown(f"**DOI URL**: {doi_url}")
 
                         # Show "Download Paper" button if arxiv_url exists
-                        if arxiv_url and "arxiv.org" in arxiv_url:
+                        if "arxiv.org/abs" in arxiv_url:
+                            # Replace 'abs' with 'pdf' to generate the PDF URL
                             pdf_url = arxiv_url.replace('/abs/', '/pdf/')
-                            if st.button(f"Download Paper", key=f"download_{pub[0]}"):  # Use unique key for each button
-                                try:
-                                    response = requests.get(pdf_url)
-                                    if response.status_code == 200:
-                                        file_name = f"{work_title.replace(' ', '_')}.pdf"
-                                        with open(file_name, "wb") as f:
-                                            f.write(response.content)
-                                        st.success(f"Downloaded {file_name} successfully!")
-                                    else:
-                                        st.error("Failed to download the paper.")
-                                except Exception as e:
-                                    st.error(f"An error occurred: {str(e)}")
+                            
+                            # Fetch the PDF file
+                            response = requests.get(pdf_url, stream=True)
+                            if response.status_code == 200:
+                                pdf_data = response.content
+                                # Provide a download button
+                                st.download_button(
+                                    label="Download Paper",
+                                    data=pdf_data,
+                                    file_name=f"{work_title}.pdf",
+                                    mime="application/pdf"
+                                )
+                            else:
+                                st.write("⚠️ Unable to fetch PDF. Please check the URL.")
             else:
                 st.write("No publications found for this professor.")
     else:
