@@ -86,8 +86,8 @@ if professor_name_search:
             if publications:
                 for pub in publications:
                     work_title = pub[2].lower()  # work_title is in column index 2
-                    arxiv_url = pub[3] if pub[3] else "No URL"  # arxiv_url is in column index 3
-                    doi_url = pub[4] if pub[4] else "No DOI"  # DOI_URL is in column index 4
+                    doi_url = pub[3] if pub[3] else "No DOI"  # DOI_URL is in column index 4
+                    arxiv_url = pub[4] if pub[4] else "No URL"  # arxiv_url is in column index 3
 
                     with st.expander(f"📄 {work_title.capitalize()}"):
                         st.markdown(f"**Arxiv URL**: {arxiv_url}")
